@@ -19,12 +19,8 @@ import (
 
 //Tracing
 var (
-	componentName  = os.Getenv("OTEL_SERVICE_NAME")
 	serviceVersion = os.Getenv("OTEL_SERVICE_VERSION")
 	lsToken        = os.Getenv("OTEL_ACCESS_TOKEN")
-	collectorURL   = os.Getenv("OTEL_COLLECTOR_ADDRESS")
-	insecure       = os.Getenv("OTEL_INSECURE")
-	flagOtel       = os.Getenv("OTEL_ENABLED")
 )
 
 func initExporter(url string, token string) *otlp.Exporter {
@@ -47,37 +43,34 @@ func initExporter(url string, token string) *otlp.Exporter {
 	return exporter
 }
 
+type TraceConfig struct {
+	ServiceName   string
+	OtelCollector string
+}
+
 // TRACING
-func InitTracer() {
+func InitTracer(args TraceConfig) {
 	b3 := b3.B3{}
 	// Register the B3 propagator globally.
 	otel.SetTextMapPropagator(b3)
-
-	if len(collectorURL) == 0 {
-		collectorURL = "localhost:4317"
-	}
-
-	if len(componentName) == 0 {
-		componentName = "golang-MainService"
-	}
 
 	if len(serviceVersion) == 0 {
 		serviceVersion = "0.0.0"
 	}
 
-	exporter := initExporter(collectorURL, lsToken)
+	exporter := initExporter(args.OtelCollector, lsToken)
 
 	resources, err := resource.New(
 		context.Background(),
 		resource.WithAttributes(
-			attribute.String("service.name", componentName),
+			attribute.String("service.name", args.ServiceName),
 			attribute.String("service.version", serviceVersion),
 			attribute.String("library.language", "go"),
 			attribute.String("library.version", "1.15.5"),
 		),
 	)
 	if err != nil {
-		//log.Printf("Could not set resources: ", err)
+		log.Fatal("Could not set resources: ", err)
 	}
 	tp := trace.NewTracerProvider(
 		trace.WithSyncer(exporter),
