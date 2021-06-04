@@ -47,7 +47,7 @@ func NegroniMiddleware(service string) negroni.Handler {
 		cfg.Propagators.Inject(ctx, propagation.HeaderCarrier(r.Header))
 
 		lrw := negroni.NewResponseWriter(w)
-		next.ServeHTTP(lrw, r)
+		next.ServeHTTP(lrw, r.WithContext(ctx))
 		statusCode := lrw.Status()
 		attrs := semconv.HTTPAttributesFromHTTPStatusCode(statusCode)
 		spanStatus, spanMessage := semconv.SpanStatusFromHTTPStatusCode(statusCode)
