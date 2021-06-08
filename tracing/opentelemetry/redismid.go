@@ -59,6 +59,7 @@ type contextClient struct {
 	*redis.Client
 }
 
+// Uses the indicated context with the redis client proxy.
 func (c contextClient) WithContext(ctx context.Context) Client {
 	c.Client = c.Client.WithContext(ctx)
 	c.WrapProcess(process(ctx))
@@ -100,25 +101,26 @@ type contextRingClient struct {
 	*redis.Ring
 }
 
+//
 func (c contextRingClient) Cluster() *redis.ClusterClient {
 
 	return nil
 }
 
+//
 func (c contextRingClient) RingClient() *redis.Ring {
 	return c.Ring
 }
 
+//
 func (c contextRingClient) WithContext(ctx context.Context) Client {
-
 	c.Ring = c.Ring.WithContext(ctx)
-
 	c.WrapProcess(process(ctx))
 	c.WrapProcessPipeline(processPipeline(ctx))
-
 	return c
 }
 
+// Captures a Redis process and creates a tracing span for it.
 func process(ctx context.Context) func(oldProcess func(cmd redis.Cmder) error) func(cmd redis.Cmder) error {
 	cfg := config{}
 	if cfg.TracerProvider == nil {
@@ -153,6 +155,7 @@ func process(ctx context.Context) func(oldProcess func(cmd redis.Cmder) error) f
 	}
 }
 
+//
 func processPipeline(ctx context.Context) func(oldProcess func(cmds []redis.Cmder) error) func(cmds []redis.Cmder) error {
 	return func(oldProcess func(cmds []redis.Cmder) error) func(cmds []redis.Cmder) error {
 		return func(cmds []redis.Cmder) error {
@@ -177,4 +180,38 @@ func processPipeline(ctx context.Context) func(oldProcess func(cmds []redis.Cmde
 			return oldProcess(cmds)
 		}
 	}
+}
+
+// Function to start a Redis span. The returned span must be terminated at the end of the operation
+// ex  :
+// span := CreateRedisSpan(ctx, "Get", "key", "value")
+// defer span.Finish()
+func CreateRedisSpan(ctx context.Context, operation string, key string, value string) trace.Span {
+	cfg := config{}
+	if cfg.TracerProvider == nil {
+		cfg.TracerProvider = otel.GetTracerProvider()
+	}
+	tracer := cfg.TracerProvider.Tracer(
+		"otel-redis",
+		trace.WithInstrumentationVersion(otelcontrib.SemVersion()),
+	)
+	if cfg.Propagators == nil {
+		cfg.Propagators = otel.GetTextMapPropagator()
+	}
+
+	spanName := fmt.Sprintf("Redis: %s", operation)
+
+	attrs := []attribute.KeyValue{
+		attribute.String("DB Type", "Redis"),
+		attribute.String("DB Key", key),
+		attribute.String("DB Values", value),
+	}
+
+	opts := []trace.SpanOption{
+		trace.WithAttributes(attrs...),
+		trace.WithSpanKind(trace.SpanKindServer),
+	}
+
+	_, span := tracer.Start(ctx, spanName, opts...)
+	return span
 }

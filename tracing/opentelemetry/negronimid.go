@@ -48,10 +48,10 @@ func NegroniMiddleware(service string) negroni.Handler {
 
 		lrw := negroni.NewResponseWriter(w)
 		next.ServeHTTP(lrw, r.WithContext(ctx))
-		//statusCode := lrw.Status()
-		//attrs := semconv.HTTPAttributesFromHTTPStatusCode(statusCode)
-		//spanStatus, spanMessage := semconv.SpanStatusFromHTTPStatusCode(statusCode)
-		//span.SetAttributes(attrs...)
-		//span.SetStatus(spanStatus, spanMessage)
+		statusCode := lrw.Status()
+		attrs := semconv.HTTPAttributesFromHTTPStatusCode(statusCode)
+		spanStatus, spanMessage := semconv.SpanStatusFromHTTPStatusCode(statusCode)
+		span.SetAttributes(attrs...)
+		span.SetStatus(spanStatus, spanMessage)
 	})
 }
