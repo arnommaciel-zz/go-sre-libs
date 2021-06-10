@@ -30,7 +30,7 @@ func OtelCustomMiddleware(service string, pattern string, h http.Handler) http.H
 		opts := []oteltrace.SpanOption{
 			oteltrace.WithAttributes(semconv.NetAttributesFromHTTPRequest("tcp", r)...),
 			oteltrace.WithAttributes(semconv.EndUserAttributesFromHTTPRequest(r)...),
-			oteltrace.WithAttributes(semconv.HTTPServerAttributesFromHTTPRequest("GLIVE-SERVICE", spanName, r)...),
+			oteltrace.WithAttributes(semconv.HTTPServerAttributesFromHTTPRequest(service, spanName, r)...),
 			oteltrace.WithSpanKind(oteltrace.SpanKindServer),
 		}
 		ctx, span := tracer.Start(ctx, spanName, opts...)
