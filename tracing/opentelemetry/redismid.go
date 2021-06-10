@@ -139,8 +139,8 @@ func process(ctx context.Context) func(oldProcess func(cmd redis.Cmder) error) f
 			spanName := cmd.Name()
 
 			attrs := []attribute.KeyValue{
-				attribute.String("DB Type", "Redis"),
-				attribute.String("DB Statement", fmt.Sprintf("%s", fmt.Sprintf("%v", cmd.Args()))),
+				attribute.String("db.system", "redis"),
+				attribute.String("db.statement", fmt.Sprintf("%s", fmt.Sprintf("%v", cmd.Args()))),
 			}
 
 			opts := []trace.SpanOption{
@@ -202,9 +202,10 @@ func CreateRedisSpan(ctx context.Context, operation string, key string, value st
 	spanName := fmt.Sprintf("Redis: %s", operation)
 
 	attrs := []attribute.KeyValue{
-		attribute.String("DB Type", "Redis"),
-		attribute.String("DB Key", key),
+		attribute.String("db.statement", operation),
+		attribute.String("db.system", "redis"),
 		attribute.String("DB Values", value),
+		attribute.String("DB Key", key),
 	}
 
 	opts := []trace.SpanOption{
