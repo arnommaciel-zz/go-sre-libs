@@ -15,6 +15,7 @@ import (
 	"go.opentelemetry.io/otel/propagation"
 	"go.opentelemetry.io/otel/sdk/resource"
 	"go.opentelemetry.io/otel/sdk/trace"
+	oteltrace "go.opentelemetry.io/otel/trace"
 )
 
 //Tracing
@@ -83,4 +84,16 @@ func InjectTrace(req *http.Request, newRequest *http.Request) {
 	propagator := otel.GetTextMapPropagator()
 	ctx := propagator.Extract(req.Context(), propagation.HeaderCarrier(req.Header))
 	propagator.Inject(ctx, propagation.HeaderCarrier(newRequest.Header))
+}
+
+func StartSpanWithContext(ctx context.Context, spanName string, attrs ...attribute.KeyValue) (context.Context, oteltrace.Span) {
+	provider := otel.GetTracerProvider()
+	tracer := provider.Tracer("otel-span")
+
+	opts := []oteltrace.SpanOption{
+		oteltrace.WithAttributes(attrs...),
+		oteltrace.WithSpanKind(oteltrace.SpanKindServer),
+	}
+
+	return tracer.Start(ctx, spanName, opts...)
 }
