@@ -10,6 +10,7 @@ import (
 
 	"go.opentelemetry.io/otel"
 	"go.opentelemetry.io/otel/attribute"
+	"go.opentelemetry.io/otel/codes"
 	"go.opentelemetry.io/otel/exporters/otlp"
 	"go.opentelemetry.io/otel/exporters/otlp/otlpgrpc"
 	"go.opentelemetry.io/otel/propagation"
@@ -96,4 +97,9 @@ func StartSpanWithContext(ctx context.Context, spanName string, attrs ...attribu
 	}
 
 	return tracer.Start(ctx, spanName, opts...)
+}
+
+func RecordError(span oteltrace.Span, erro error) {
+	span.RecordError(erro)
+	span.SetStatus(codes.Error, "critical error")
 }
