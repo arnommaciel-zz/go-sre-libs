@@ -2,7 +2,6 @@ package opentelemetry
 
 import (
 	"context"
-	"fmt"
 
 	"go.mongodb.org/mongo-driver/bson"
 	otelcontrib "go.opentelemetry.io/contrib"
@@ -28,17 +27,17 @@ func CreateMongoDBSpan(ctx context.Context, operation string, collection string,
 		cfg.Propagators = otel.GetTextMapPropagator()
 	}
 
-	spanName := fmt.Sprintf("Mongo: %s", operation)
+	spanName := operation
 
 	attrs := []attribute.KeyValue{
-		attribute.String("DB Type", "MongoDB"),
-		attribute.String("DB Query", fmt.Sprintf("%s", fmt.Sprintf("%v", query))),
-		attribute.String("DB Values", collection),
+		attribute.String("db.mongodb.collection", collection),
+		attribute.String("db.operation", operation),
+		attribute.String("db.system", "mongodb"),
 	}
 
 	opts := []trace.SpanOption{
 		trace.WithAttributes(attrs...),
-		trace.WithSpanKind(trace.SpanKindServer),
+		trace.WithSpanKind(trace.SpanKindClient),
 	}
 
 	_, span := tracer.Start(ctx, spanName, opts...)

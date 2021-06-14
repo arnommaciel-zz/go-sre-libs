@@ -145,7 +145,7 @@ func process(ctx context.Context) func(oldProcess func(cmd redis.Cmder) error) f
 
 			opts := []trace.SpanOption{
 				trace.WithAttributes(attrs...),
-				trace.WithSpanKind(trace.SpanKindServer),
+				trace.WithSpanKind(trace.SpanKindClient),
 			}
 
 			_, span := tracer.Start(ctx, spanName, opts...)
@@ -199,18 +199,16 @@ func CreateRedisSpan(ctx context.Context, operation string, key string, value st
 		cfg.Propagators = otel.GetTextMapPropagator()
 	}
 
-	spanName := fmt.Sprintf("Redis: %s", operation)
+	spanName := fmt.Sprintf("%s %s", operation, key)
 
 	attrs := []attribute.KeyValue{
-		attribute.String("db.statement", operation),
+		attribute.String("db.statement", fmt.Sprintf("%s %s %s", operation, key, value)),
 		attribute.String("db.system", "redis"),
-		attribute.String("DB Values", value),
-		attribute.String("DB Key", key),
 	}
 
 	opts := []trace.SpanOption{
 		trace.WithAttributes(attrs...),
-		trace.WithSpanKind(trace.SpanKindServer),
+		trace.WithSpanKind(trace.SpanKindClient),
 	}
 
 	_, span := tracer.Start(ctx, spanName, opts...)

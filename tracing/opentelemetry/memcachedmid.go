@@ -20,24 +20,23 @@ func CreateMemCachedSpan(ctx context.Context, operation string, key string, valu
 		cfg.TracerProvider = otel.GetTracerProvider()
 	}
 	tracer := cfg.TracerProvider.Tracer(
-		"otel-MemCached",
+		"otel-memcached",
 		trace.WithInstrumentationVersion(otelcontrib.SemVersion()),
 	)
 	if cfg.Propagators == nil {
 		cfg.Propagators = otel.GetTextMapPropagator()
 	}
 
-	spanName := fmt.Sprintf("MemCached: %s", operation)
+	spanName := fmt.Sprintf("%s %s", operation, key)
 
 	attrs := []attribute.KeyValue{
-		attribute.String("DB Type", "MemCached"),
-		attribute.String("DB key", key),
-		attribute.String("DB Values", value),
+		attribute.String("db.system", "memcached"),
+		attribute.String("db.statement", fmt.Sprintf("%s %s %s", operation, key, value)),
 	}
 
 	opts := []trace.SpanOption{
 		trace.WithAttributes(attrs...),
-		trace.WithSpanKind(trace.SpanKindServer),
+		trace.WithSpanKind(trace.SpanKindClient),
 	}
 
 	_, span := tracer.Start(ctx, spanName, opts...)
