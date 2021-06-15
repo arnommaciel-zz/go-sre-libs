@@ -2,8 +2,7 @@ package opentelemetry
 
 import (
 	"go.opentelemetry.io/otel/propagation"
-	oteltrace "go.opentelemetry.io/otel/trace"
-	trace "go.opentelemetry.io/otel/trace"
+	"go.opentelemetry.io/otel/trace"
 )
 
 // config is used to configure the mux middleware.
@@ -26,7 +25,7 @@ func WithPropagators(propagators propagation.TextMapPropagator) Option {
 
 // WithTracerProvider specifies a tracer provider to use for creating a tracer.
 // If none is specified, the global provider is used.
-func WithTracerProvider(provider oteltrace.TracerProvider) Option {
+func WithTracerProvider(provider trace.TracerProvider) Option {
 	return func(cfg *config) {
 		cfg.TracerProvider = provider
 	}

@@ -3,6 +3,7 @@ package opentelemetry
 import (
 	"net/http"
 
+	"github.com/urfave/negroni"
 	otelcontrib "go.opentelemetry.io/contrib"
 	"go.opentelemetry.io/otel"
 	"go.opentelemetry.io/otel/propagation"
@@ -37,6 +38,12 @@ func OtelCustomMiddleware(service string, pattern string, h http.Handler) http.H
 		defer span.End()
 
 		cfg.Propagators.Inject(ctx, propagation.HeaderCarrier(r.Header))
-		h.ServeHTTP(w, r.WithContext(ctx))
+		lrw := negroni.NewResponseWriter(w)
+		h.ServeHTTP(lrw, r.WithContext(ctx))
+		statusCode := lrw.Status()
+		attrs := semconv.HTTPAttributesFromHTTPStatusCode(statusCode)
+		spanStatus, spanMessage := semconv.SpanStatusFromHTTPStatusCode(statusCode)
+		span.SetAttributes(attrs...)
+		span.SetStatus(spanStatus, spanMessage)
 	})
 }

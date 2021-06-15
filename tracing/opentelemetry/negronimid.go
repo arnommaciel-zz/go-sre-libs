@@ -9,7 +9,6 @@ import (
 	"go.opentelemetry.io/otel/propagation"
 	"go.opentelemetry.io/otel/semconv"
 	oteltrace "go.opentelemetry.io/otel/trace"
-	trace "go.opentelemetry.io/otel/trace"
 )
 
 const (
@@ -25,7 +24,7 @@ func NegroniMiddleware(service string) negroni.Handler {
 	}
 	tracer := cfg.TracerProvider.Tracer(
 		tracerName,
-		trace.WithInstrumentationVersion(otelcontrib.SemVersion()),
+		oteltrace.WithInstrumentationVersion(otelcontrib.SemVersion()),
 	)
 	if cfg.Propagators == nil {
 		cfg.Propagators = otel.GetTextMapPropagator()

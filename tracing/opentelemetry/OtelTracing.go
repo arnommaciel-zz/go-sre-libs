@@ -26,16 +26,12 @@ var (
 )
 
 func initExporter(url string, token string) *otlp.Exporter {
-	//	headers := map[string]string{
-	//		"lightstep-access-token": token,
-	//	}
-	//
+
 	exporter, err := otlp.NewExporter(
 		context.Background(),
 		otlpgrpc.NewDriver(
 			otlpgrpc.WithInsecure(),
 			otlpgrpc.WithEndpoint(url),
-			//			otlpgrpc.WithHeaders(headers),
 		),
 	)
 
@@ -48,6 +44,10 @@ func initExporter(url string, token string) *otlp.Exporter {
 type TraceConfig struct {
 	ServiceName   string
 	OtelCollector string
+}
+
+type Span struct {
+	span oteltrace.Span
 }
 
 // TRACING
@@ -87,7 +87,7 @@ func InjectTrace(req *http.Request, newRequest *http.Request) {
 	propagator.Inject(ctx, propagation.HeaderCarrier(newRequest.Header))
 }
 
-func StartSpanWithContext(ctx context.Context, spanName string, attrs ...attribute.KeyValue) (context.Context, oteltrace.Span) {
+func StartSpanWithContext(ctx context.Context, spanName string, attrs ...attribute.KeyValue) (context.Context, Span) {
 	provider := otel.GetTracerProvider()
 	tracer := provider.Tracer("otel-span")
 
@@ -96,10 +96,27 @@ func StartSpanWithContext(ctx context.Context, spanName string, attrs ...attribu
 		oteltrace.WithSpanKind(oteltrace.SpanKindServer),
 	}
 
-	return tracer.Start(ctx, spanName, opts...)
+	ctx, span := tracer.Start(ctx, spanName, opts...)
+	return ctx, Span{
+		span: span,
+	}
 }
 
-func RecordError(span oteltrace.Span, erro error) {
-	span.RecordError(erro)
-	span.SetStatus(codes.Error, "critical error")
+func (s *Span) End() {
+	if s == nil || s.span == nil {
+		return
+	}
+
+	defer s.span.End()
+
+	if recovered := recover(); recovered != nil {
+		// Record but don't stop the panic.
+		defer panic(recovered)
+		s.span.SetStatus(codes.Error, "critical error")
+	}
+}
+
+func RecordError(span Span, erro error) {
+	span.span.RecordError(erro)
+	span.span.SetStatus(codes.Error, "critical error")
 }
