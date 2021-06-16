@@ -1,4 +1,4 @@
-module gitlab.globoi.com/sre/go-sre-libs
+module github.com/arnommaciel/go-sre-libs
 
 go 1.16
 
