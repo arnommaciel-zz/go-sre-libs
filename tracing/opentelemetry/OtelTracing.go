@@ -5,6 +5,7 @@ import (
 	"log"
 	"net/http"
 	"os"
+	"strconv"
 
 	"go.opentelemetry.io/contrib/propagators/b3"
 
@@ -55,6 +56,11 @@ func InitTracer(args TraceConfig) {
 	b3 := b3.B3{}
 	// Register the B3 propagator globally.
 	otel.SetTextMapPropagator(b3)
+	SamplerRatio, err := strconv.ParseFloat(os.Getenv("OTEL_SAMPLER_RATIO"), 64)
+	if err != nil {
+		SamplerRatio = 0.25
+		log.Println("Sampler ratio value provided invalid, using default value: 0.25")
+	}
 
 	if len(serviceVersion) == 0 {
 		serviceVersion = "0.0.0"
@@ -68,13 +74,13 @@ func InitTracer(args TraceConfig) {
 			attribute.String("service.name", args.ServiceName),
 			attribute.String("service.version", serviceVersion),
 			attribute.String("library.language", "go"),
-			attribute.String("library.version", "1.15.5"),
 		),
 	)
 	if err != nil {
 		log.Fatal("Could not set resources: ", err)
 	}
 	tp := trace.NewTracerProvider(
+		trace.WithSampler(trace.ParentBased(trace.TraceIDRatioBased(SamplerRatio))),
 		trace.WithSyncer(exporter),
 		trace.WithResource(resources),
 	)
