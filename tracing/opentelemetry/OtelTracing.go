@@ -17,7 +17,6 @@ import (
 	"go.opentelemetry.io/otel/propagation"
 	"go.opentelemetry.io/otel/sdk/resource"
 	"go.opentelemetry.io/otel/sdk/trace"
-	"go.opentelemetry.io/otel/codes"
 	oteltrace "go.opentelemetry.io/otel/trace"
 )
 
@@ -126,9 +125,4 @@ func (s *Span) End() {
 func RecordError(span Span, erro error) {
 	span.span.RecordError(erro)
 	span.span.SetStatus(codes.Error, "critical error")
-}
-
-func RecordError(span oteltrace.Span, erro error) {
-	span.RecordError(erro)
-	span.SetStatus(codes.Error, "critical error")
 }
